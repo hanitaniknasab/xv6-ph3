@@ -150,6 +150,11 @@ userinit(void)
 
   p->state = RUNNABLE;
 
+  p->arrival_time = 0;
+  p->deadline = 0;
+  p->queue = CLASS2_RR;
+  p->age = 0;
+  
   release(&ptable.lock);
 }
 
@@ -216,6 +221,16 @@ fork(void)
 
   np->state = RUNNABLE;
 
+  np->arrival_time = ticks;
+  np->deadline = 0;
+  np->age=0;
+  np->queue = CLASS2_FCFS;
+  if (strncmp(np->name,"sh",3)||strncmp(np->parent->name,"sh",3)){
+    np->queue = CLASS2_RR;
+  }
+  else{
+    np->queue = CLASS2_FCFS;
+  }
   release(&ptable.lock);
 
   return pid;
@@ -333,17 +348,53 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+        if(p->state==RUNNABLE && p->queue==CLASS2_FCFS){
+          p->age++;    
+          //cprintf("age increased for PID: %d to %d\n",p->pid,p->age);
+          if(p->age>=800){
+            p->queue = CLASS2_RR ;
+            p->age = 0;
+            cprintf("PID %d: got increased priority to RR due to growing old!\n",p->pid);
+          }
+        }
+      }
+      struct proc *runable_p = 0;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-
-      swtch(&(c->scheduler), p->context);
+      for(p=ptable.proc; p <&ptable.proc[NPROC]; p++){
+        if(p->state==RUNNABLE && p->queue==CLASS1){
+          if(!runable_p || p->deadline < runable_p->deadline){
+            runable_p = p;
+          }
+        }
+      }
+      if(!runable_p){
+        for(p=ptable.proc; p <&ptable.proc[NPROC]; p++){
+          if(p->state==RUNNABLE && p->queue==CLASS2_RR){
+            runable_p=p;
+            break;
+          }
+        }
+      }
+      if(!runable_p){
+        for(p=ptable.proc; p <&ptable.proc[NPROC]; p++){
+          if(p->state==RUNNABLE && p->queue==CLASS2_FCFS){
+            if(!runable_p || p->arrival_time < runable_p->arrival_time){
+              runable_p = p ;
+            }
+  
+          }
+        }
+      }
+      if(runable_p){
+        c->proc = runable_p;
+        //cprintf("proc %d worked in age %d\n",runable_p->pid,runable_p->age);
+        if(runable_p->queue==CLASS2_FCFS){
+          runable_p->age = 0;
+        }
+        //cprintf("proc %d worked in age %d\n",runable_p->pid,runable_p->age);
+        switchuvm(runable_p);
+        runable_p->state = RUNNING;
+        swtch(&(c->scheduler),runable_p->context);
       switchkvm();
 
       // Process is done running for now.
@@ -531,4 +582,44 @@ procdump(void)
     }
     cprintf("\n");
   }
+
 }
+
+int sys_setlevel(void){
+    int pid, new_level;
+    struct proc *p;
+
+    // fetch arguments from user stack
+    if(argint(0, &pid) < 0)
+        return -1;
+    if(argint(1, &new_level) < 0)
+        return -1;
+
+    // Check level validation
+    if(new_level != CLASS2_RR && new_level != CLASS2_FCFS)
+        return -1;
+
+    // Find the process 
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->pid == pid){
+            
+            if(p->queue == CLASS2_FCFS || p->queue == CLASS2_RR){
+                p->queue = new_level;
+
+                // Optionally reset age when level changed
+                p->age = 0;
+
+                release(&ptable.lock);
+                return 0; 
+            } if(p->queue == CLASS1) {
+                release(&ptable.lock);
+                return -1; // Not in class2, can't change level
+            }
+        }
+    }
+    release(&ptable.lock);
+    return -1; // pid not found
+}
+
+

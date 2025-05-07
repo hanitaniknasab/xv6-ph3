@@ -101,6 +101,9 @@ exec(char *path, char **argv)
   curproc->tf->esp = sp;
   switchuvm(curproc);
   freevm(oldpgdir);
+  if(curproc->pid != 1 && curproc->parent->pid != 1){
+    curproc->queue = CLASS2_FCFS ;
+  }
   return 0;
 
  bad:
