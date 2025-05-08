@@ -623,3 +623,66 @@ int sys_setlevel(void){
 }
 
 
+
+
+void printspaces(int n) {
+    while (n-- > 0)
+        cprintf(" ");
+}
+
+// Prints a dashed separator line based on column widths
+void printdashline(int *columns, int count) {
+    cprintf("|");
+    for (int i = 0; i < count; i++) {
+        for (int j = 0; j < columns[i] + 2; j++) // +2 for spacing around text
+            cprintf("-");
+        cprintf("|");
+    }
+    cprintf("\n");
+}
+int sys_printprocinfo(void) {
+    static char *states[] = {
+        [UNUSED]   "UNUSED",
+        [EMBRYO]   "EMBRYO",
+        [SLEEPING] "SLEEPING",
+        [RUNNABLE] "RUNNABLE",
+        [RUNNING]  "RUNNING",
+        [ZOMBIE]   "ZOMBIE"
+    };
+
+    // Column widths
+    static int columns[] = {14, 5, 9, 10, 11, 9, 8, 16, 8}; // total: 9 columns
+
+    cprintf("| %-*s | %-*s | %-*s | %-*s | %-*s | %-*s | %-*s | %-*s | %-*s |\n",
+            columns[0], "name", columns[1], "pid", columns[2], "state",
+            columns[3], "class", columns[4], "algorithm", columns[5], "wait_time",
+            columns[6], "deadline", columns[7], "consecutive_run", columns[8], "arrtvs");
+
+    printdashline(columns, 9);
+
+    struct proc *p;
+    acquire(&ptable.lock);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state == UNUSED)
+            continue;
+
+        const char *state = (p->state >= 0 && p->state < NELEM(states)) ? states[p->state] : "???";
+        const char *sched_class = p->sched_class ? p->sched_class : "normal";
+        const char *sched_algo = p->sched_algo ? p->sched_algo : "nlfd(RE)";
+
+        cprintf("| %-*s | %-*d | %-*s | %-*s | %-*s | %-*d | %-*d | %-*d | %-*d |\n",
+                columns[0], p->name,
+                columns[1], p->pid,
+                columns[2], state,
+                columns[3], sched_class,
+                columns[4], sched_algo,
+                columns[5], p->wait_time,
+                columns[6], p->deadline,
+                columns[7], p->consecutive_run_ticks,
+                columns[8], p->queue_arrival_time);
+    }
+    release(&ptable.lock);
+
+    return 0;
+}
+

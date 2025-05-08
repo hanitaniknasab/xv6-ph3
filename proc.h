@@ -54,6 +54,14 @@ struct proc {
   uint arrival_time;
   uint deadline;
   uint age;
+  char *sched_class[16];
+  char *sched_algo[16];
+  int wait_time;
+  int consecutive_run_ticks;
+  int queue_arrival_time;
+  
+  
+  
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -61,3 +69,5 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+void printprocinfo(void);
