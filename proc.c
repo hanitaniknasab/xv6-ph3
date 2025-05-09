@@ -10,6 +10,9 @@
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
+  int class1_num;
+  int rr_num;
+  int fcfs_num;
 } ptable;
 
 static struct proc *initproc;
@@ -19,6 +22,35 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+
+void
+inc_num(struct proc* p){
+  if(p->queue==CLASS1){
+    ptable.class1_num++;
+  }
+  else{
+    if(p->queue==CLASS2_RR){
+      ptable.rr_num++;
+    }
+    else{
+      ptable.fcfs_num++;
+    }
+  }
+}
+void
+dec_num(struct proc* p){
+  if(p->queue==CLASS1){
+    ptable.class1_num--;
+  }
+  else{
+    if(p->queue==CLASS2_RR){
+      ptable.rr_num--;
+    }
+    else{
+      ptable.fcfs_num--;
+    }
+  }
+}
 
 void
 pinit(void)
@@ -150,11 +182,14 @@ userinit(void)
 
   p->state = RUNNABLE;
 
-  p->arrival_time = 0;
+  p->arrival_time = ticks;
   p->deadline = 0;
   p->queue = CLASS2_RR;
   p->age = 0;
-  
+  //p->backToBack = 0;
+
+  inc_num(p);
+
   release(&ptable.lock);
 }
 
@@ -231,6 +266,8 @@ fork(void)
   else{
     np->queue = CLASS2_FCFS;
   }
+
+  inc_num(np);
   release(&ptable.lock);
 
   return pid;
@@ -359,15 +396,20 @@ scheduler(void)
         }
       }
       struct proc *runable_p = 0;
+      int min_dead = 1000000;
 
+    if(ptable.class1_num>0){
       for(p=ptable.proc; p <&ptable.proc[NPROC]; p++){
         if(p->state==RUNNABLE && p->queue==CLASS1){
-          if(!runable_p || p->deadline < runable_p->deadline){
+          int argMin = ticks - p->deadline ;
+          if(!runable_p || argMin<min_dead){
+            min_dead = argMin;
             runable_p = p;
           }
         }
       }
-      if(!runable_p){
+    }
+      if(!runable_p && ptable.rr_num>0){
         for(p=ptable.proc; p <&ptable.proc[NPROC]; p++){
           if(p->state==RUNNABLE && p->queue==CLASS2_RR){
             runable_p=p;
@@ -375,7 +417,7 @@ scheduler(void)
           }
         }
       }
-      if(!runable_p){
+      if(!runable_p && ptable.fcfs_num>0){
         for(p=ptable.proc; p <&ptable.proc[NPROC]; p++){
           if(p->state==RUNNABLE && p->queue==CLASS2_FCFS){
             if(!runable_p || p->arrival_time < runable_p->arrival_time){
@@ -387,6 +429,7 @@ scheduler(void)
       }
       if(runable_p){
         c->proc = runable_p;
+        dec_num(runable_p);
         //cprintf("proc %d worked in age %d\n",runable_p->pid,runable_p->age);
         if(runable_p->queue==CLASS2_FCFS){
           runable_p->age = 0;
@@ -438,6 +481,9 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
+
+  inc_num(myproc());
+
   sched();
   release(&ptable.lock);
 }
@@ -488,6 +534,7 @@ sleep(void *chan, struct spinlock *lk)
   }
   // Go to sleep.
   p->chan = chan;
+  if(p->state == RUNNABLE) dec_num(p);
   p->state = SLEEPING;
 
   sched();
@@ -511,8 +558,10 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+    if(p->state == SLEEPING && p->chan == chan){
       p->state = RUNNABLE;
+      inc_num(p);
+    }  
 }
 
 // Wake up all processes sleeping on chan.
@@ -537,8 +586,10 @@ kill(int pid)
     if(p->pid == pid){
       p->killed = 1;
       // Wake process from sleep if necessary.
-      if(p->state == SLEEPING)
+      if(p->state == SLEEPING){
+        inc_num(p);
         p->state = RUNNABLE;
+      }  
       release(&ptable.lock);
       return 0;
     }
@@ -603,18 +654,23 @@ int sys_setlevel(void){
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->pid == pid){
-            
+          if(p->queue == new_level){
+            release(&ptable.lock);
+            cprintf("the process is in this level now, can't change level!\n");
+            return -1;
+          }
             if(p->queue == CLASS2_FCFS || p->queue == CLASS2_RR){
+                cprintf("\n",p->queue);
                 p->queue = new_level;
-
-                // Optionally reset age when level changed
-                p->age = 0;
-
+               // p->age = 0;
+                cprintf("\n",p->queue);
                 release(&ptable.lock);
+                cprintf("changing level done!\n");
                 return 0; 
             } if(p->queue == CLASS1) {
                 release(&ptable.lock);
-                return -1; // Not in class2, can't change level
+                cprintf("Not in class2, can't change level!\n");
+                return -1; 
             }
         }
     }

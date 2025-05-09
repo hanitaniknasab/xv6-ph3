@@ -23,7 +23,7 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int setlevel(void);
+int setlevel(int pid,int new_level);
 int printprocinfo(void);
 // ulib.c
 int stat(const char*, struct stat*);
