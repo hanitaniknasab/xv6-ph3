@@ -102,9 +102,14 @@ exec(char *path, char **argv)
   switchuvm(curproc);
   freevm(oldpgdir);
   if(strncmp(curproc->name,"sh",3) != 0  && strncmp(curproc->name ,"init",5) != 0 && curproc->queue != CLASS1){
-    change_num(curproc, -1);
-    curproc->queue = CLASS2_FCFS ;
-    change_num(curproc, 1);
+    if(curproc->state == RUNNABLE) {
+      change_num(curproc, -1);
+      curproc->queue = CLASS2_FCFS ;
+      change_num(curproc, 1);
+    }
+    else {
+      curproc->queue = CLASS2_FCFS ;
+    }
   }
   return 0;
 
