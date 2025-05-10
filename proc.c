@@ -776,7 +776,7 @@ void printprocinfo(void) {
     cprintf("%d", p->consecutive_run_ticks);
     printspaces(columns[7] - count_digits(p->consecutive_run_ticks));
 
-    cprintf("%d", p->queue_arrival_time);a
+    cprintf("%d", p->queue_arrival_time);
     printspaces(columns[8] - count_digits(p->queue_arrival_time));
 
     cprintf("\n");
