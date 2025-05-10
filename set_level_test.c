@@ -3,8 +3,8 @@
 #include "stat.h"
 #include "user.h"
 
-#define RR 1
-#define FCFS 2
+// #define RR 1
+// #define FCFS 2
 #include "syscall.h"
 
 // int setlevel(int pid, int level) {
@@ -19,36 +19,36 @@
 // int setlevel(int pid, int level);
 
 int main(int argc, char *argv[]) {
-    int pids[3];
-    int i;
+    // int pids[3];
+    // int i;
 
     int target_pid = atoi(argv[1]);
     int queue = atoi(argv[2]);
 
     printf(1, "Starting test program for setlevel syscall\n");
+/////////////////////////////////////////////
+    // // Create 3 child processes
+    // for(i = 0; i < 3; i++) {
+    //     int pid = fork();
+    //     if(pid < 0) {
+    //         printf(2, "fork failed\n");
+    //         exit();
+    //     }
+    //     if(pid == 0) {
+    //         // Child process – infinite loop to keep alive
+    //         while(1) {
+    //             // Busy wait (simulate workload)
+    //         }
+    //         // Should never reach here
+    //         exit();
+    //     }
+    //     // Parent tracks child pids
+    //     pids[i] = pid;
+    // }
 
-    // Create 3 child processes
-    for(i = 0; i < 3; i++) {
-        int pid = fork();
-        if(pid < 0) {
-            printf(2, "fork failed\n");
-            exit();
-        }
-        if(pid == 0) {
-            // Child process – infinite loop to keep alive
-            while(1) {
-                // Busy wait (simulate workload)
-            }
-            // Should never reach here
-            exit();
-        }
-        // Parent tracks child pids
-        pids[i] = pid;
-    }
-
-    // Give some time for children to become runnable (optional)
-    sleep(10);
-
+    // // Give some time for children to become runnable (optional)
+    // sleep(10);
+///////////////////////////////////////////
     // Print their current levels, change levels, print again
     //for(i = 0; i < 3; i++) {
         //int pid = pids[i];
@@ -76,10 +76,10 @@ int main(int argc, char *argv[]) {
     //}
 
     // Cleanup: kill all child processes
-    for(i = 0; i < 3; i++) {
-        kill(pids[i]);
-        wait();
-    }
+    // for(i = 0; i < 3; i++) {
+    //     kill(pids[i]);
+    //     wait();
+    // }
 
     printf(1, "Test program finished.\n");
     exit();
