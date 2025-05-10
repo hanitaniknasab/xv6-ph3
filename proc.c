@@ -658,10 +658,11 @@ int sys_setlevel(void){
             return -1;
           }
             if(p->queue == CLASS2_FCFS || p->queue == CLASS2_RR){
-                cprintf("\n",p->queue);
+                //cprintf("%d\n",p->queue);
                 p->queue = new_level;
-               // p->age = 0;
-                cprintf("\n",p->queue);
+                // p->age = 0;
+                p->cons_run = 0;
+                //cprintf("%d\n",p->queue);
                 release(&ptable.lock);
                 cprintf("changing level done!\n");
                 return 0; 
@@ -739,7 +740,7 @@ void printprocinfo(void) {
 
   acquire(&ptable.lock);
 
-  cprintf("name            pid  state class   algorithm wait_time deadline cons_run arrival\n"
+  cprintf("name            pid  state class   algorithm age deadline cons_run arrival\n"
     "------------------------------------------------------------------------------\n");
 
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
@@ -766,17 +767,17 @@ void printprocinfo(void) {
     cprintf("%s", algoStr);
     printspaces(columns[4] - strlen(algoStr));
 
-    cprintf("%d", p->wait_time);
-    printspaces(columns[5] - count_digits(p->wait_time));
+    cprintf("%d", p->age);
+    printspaces(columns[5] - count_digits(p->age));
 
     cprintf("%d", p->deadline);
     printspaces(columns[6] - count_digits(p->deadline));
 
-    cprintf("%d", p->consecutive_run_ticks);
-    printspaces(columns[7] - count_digits(p->consecutive_run_ticks));
+    cprintf("%d", p->cons_run);
+    printspaces(columns[7] - count_digits(p->cons_run));
 
-    cprintf("%d", p->queue_arrival_time);
-    printspaces(columns[8] - count_digits(p->queue_arrival_time));
+    cprintf("%d", p->arrival_time);
+    printspaces(columns[8] - count_digits(p->arrival_time));
 
     cprintf("\n");
   } 

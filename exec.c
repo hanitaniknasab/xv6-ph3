@@ -103,6 +103,7 @@ exec(char *path, char **argv)
   freevm(oldpgdir);
   if(strncmp(curproc->name,"sh",3) != 0  && strncmp(curproc->name ,"init",5) != 0 && curproc->queue != CLASS1){
     curproc->queue = CLASS2_FCFS ;
+    curproc->cons_run = 0;
   }
   return 0;
 
