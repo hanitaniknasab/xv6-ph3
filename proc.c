@@ -639,7 +639,7 @@ int sys_setlevel(void){
     int pid, new_level;
     struct proc *p;
 
-
+  
     if(argint(0, &pid) < 0)
         return -1;
     if(argint(1, &new_level) < 0)
@@ -782,4 +782,32 @@ void printprocinfo(void) {
   } 
 
   release(&ptable.lock);
+}
+
+int sys_dl_proc(void){
+  int pid, dead_line;
+  
+    if(argint(0, &pid) < 0)
+        return -1;
+    if(argint(1, &dead_line) < 0)
+        return -1;
+    int flag = 0;
+    acquire(&ptable.lock);
+    for(int index = 0; index < NPROC; index++) {
+      if(ptable.proc[index].pid == pid) {
+        ptable.proc[index].deadline = dead_line;
+        ptable.proc[index].queue = CLASS1;
+        flag = 1;
+        break;
+      }
+    }
+    release(&ptable.lock);
+    if(flag == 1){
+      printprocinfo();
+    }
+    else {
+      cprintf("proc not found!");
+
+    }
+    return 1;
 }

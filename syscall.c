@@ -105,6 +105,7 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_setlevel(void);
 extern int sys_printprocinfo(void);
+extern int sys_dl_proc(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -130,6 +131,7 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_setlevel]   sys_setlevel,
 [SYS_printprocinfo]   sys_printprocinfo, 
+[SYS_dl_proc]   sys_dl_proc, 
 };
 
 void

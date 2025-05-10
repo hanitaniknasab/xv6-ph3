@@ -22,3 +22,4 @@
 #define SYS_close  21
 #define SYS_setlevel  22
 #define SYS_printprocinfo 23
+#define SYS_dl_proc 24

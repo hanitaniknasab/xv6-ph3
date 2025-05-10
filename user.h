@@ -25,6 +25,7 @@ int sleep(int);
 int uptime(void);
 int setlevel(int pid,int new_level);
 int printprocinfo(void);
+int dl_proc(int,int);
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
