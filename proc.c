@@ -534,7 +534,6 @@ sleep(void *chan, struct spinlock *lk)
   }
   // Go to sleep.
   p->chan = chan;
-  if(p->state == RUNNABLE) //dec_num(p);
   p->state = SLEEPING;
 
   sched();
@@ -587,7 +586,7 @@ kill(int pid)
       p->killed = 1;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING){
-        //inc_num(p);
+        inc_num(p);
         p->state = RUNNABLE;
       }  
       release(&ptable.lock);
