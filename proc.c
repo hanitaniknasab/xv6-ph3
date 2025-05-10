@@ -7,14 +7,6 @@
 #include "proc.h"
 #include "spinlock.h"
 
-struct {
-  struct spinlock lock;
-  struct proc proc[NPROC];
-  int class1_num;
-  int rr_num;
-  int fcfs_num;
-} ptable;
-
 static struct proc *initproc;
 
 int nextpid = 1;
@@ -23,31 +15,25 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+struct {
+  struct spinlock lock;
+  struct proc proc[NPROC];
+  int class1_num;
+  int rr_num;
+  int fcfs_num;
+} ptable;
+
 void
-inc_num(struct proc* p){
+change_num(struct proc* p, int inc_or_dec){
   if(p->queue==CLASS1){
-    ptable.class1_num++;
+    ptable.class1_num = ptable.class1_num + inc_or_dec;
   }
   else{
     if(p->queue==CLASS2_RR){
-      ptable.rr_num++;
+      ptable.rr_num = ptable.rr_num + inc_or_dec;
     }
     else{
-      ptable.fcfs_num++;
-    }
-  }
-}
-void
-dec_num(struct proc* p){
-  if(p->queue==CLASS1){
-    ptable.class1_num--;
-  }
-  else{
-    if(p->queue==CLASS2_RR){
-      ptable.rr_num--;
-    }
-    else{
-      ptable.fcfs_num--;
+      ptable.fcfs_num = ptable.fcfs_num + inc_or_dec;
     }
   }
 }
@@ -188,7 +174,7 @@ userinit(void)
   p->age = 0;
   //p->backToBack = 0;
 
-  inc_num(p);
+  change_num(p, 1);
 
   release(&ptable.lock);
 }
@@ -267,7 +253,7 @@ fork(void)
     np->queue = CLASS2_FCFS;
   }
 
-  inc_num(np);
+  change_num(np, 1);
   release(&ptable.lock);
 
   return pid;
@@ -429,7 +415,7 @@ scheduler(void)
       }
       if(runable_p){
         c->proc = runable_p;
-        dec_num(runable_p);
+        change_num(runable_p, -1);
         //cprintf("proc %d worked in age %d\n",runable_p->pid,runable_p->age);
         if(runable_p->queue==CLASS2_FCFS){
           runable_p->age = 0;
@@ -482,7 +468,7 @@ yield(void)
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
 
-  inc_num(myproc());
+  change_num(myproc(), 1);
 
   sched();
   release(&ptable.lock);
@@ -559,7 +545,7 @@ wakeup1(void *chan)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan){
       p->state = RUNNABLE;
-      inc_num(p);
+      change_num(p, 1);
     }  
 }
 
@@ -586,7 +572,7 @@ kill(int pid)
       p->killed = 1;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING){
-        inc_num(p);
+        change_num(p, 1);
         p->state = RUNNABLE;
       }  
       release(&ptable.lock);
@@ -779,7 +765,8 @@ void printprocinfo(void) {
     printspaces(columns[8] - count_digits(p->queue_arrival_time));
 
     cprintf("\n");
-  } 
+  }
+
 
   release(&ptable.lock);
 }
@@ -796,7 +783,14 @@ int sys_dl_proc(void){
     for(int index = 0; index < NPROC; index++) {
       if(ptable.proc[index].pid == pid) {
         ptable.proc[index].deadline = dead_line;
-        ptable.proc[index].queue = CLASS1;
+        if(ptable.proc[index].state == RUNNABLE) {
+          change_num(&ptable.proc[index], -1);
+          ptable.proc[index].queue = CLASS1;
+          change_num(&ptable.proc[index], 1);
+        }
+        else {
+          ptable.proc[index].queue = CLASS1;
+        }
         flag = 1;
         break;
       }

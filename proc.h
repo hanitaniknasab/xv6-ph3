@@ -71,3 +71,4 @@ struct proc {
 //   expandable heap
 
 void printprocinfo(void);
+void change_num(struct proc* p, int inc_or_dec);
