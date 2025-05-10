@@ -640,17 +640,16 @@ int sys_setlevel(void){
     int pid, new_level;
     struct proc *p;
 
-    // fetch arguments from user stack
+
     if(argint(0, &pid) < 0)
         return -1;
     if(argint(1, &new_level) < 0)
         return -1;
 
-    // Check level validation
+ 
     if(new_level != CLASS2_RR && new_level != CLASS2_FCFS)
         return -1;
 
-    // Find the process 
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->pid == pid){
@@ -715,22 +714,22 @@ char* getAlgorithmString(struct proc *p) {
 
 int count_digits(int number) {
   if (number == 0)
-      return 1;  // Special case: 0 has 1 digit
+      return 1;  
 
   int count = 0;
   if (number < 0) {
-      count++;       // Count the negative sign
-      number = -number; // Work with the absolute value
+      count++;     
+      number = -number; 
   }
 
   while (number > 0) {
       count++;
-      number /= 10; // Remove the last digit
+      number /= 10; 
   }
   return count;
 }
 
-void printspaces(int count) {  // Renamed to match calls
+void printspaces(int count) { 
   for (int i = 0; i < count; i++) {
     cprintf(" ");
   }
@@ -777,7 +776,7 @@ void printprocinfo(void) {
     cprintf("%d", p->consecutive_run_ticks);
     printspaces(columns[7] - count_digits(p->consecutive_run_ticks));
 
-    cprintf("%d", p->queue_arrival_time);
+    cprintf("%d", p->queue_arrival_time);a
     printspaces(columns[8] - count_digits(p->queue_arrival_time));
 
     cprintf("\n");
