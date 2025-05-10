@@ -681,64 +681,107 @@ int sys_setlevel(void){
 
 
 
-void printspaces(int n) {
-    while (n-- > 0)
-        cprintf(" ");
+
+
+
+char* getStateString(enum procstate state) {
+  switch(state) {
+    case UNUSED: return "UNUSED";
+    case EMBRYO: return "EMBRYO";
+    case SLEEPING: return "SLEEPING";
+    case RUNNABLE: return "RUNNABLE";
+    case RUNNING: return "RUNNING";
+    case ZOMBIE: return "ZOMBIE";
+    default: return "UNKNOWN";
+  }
+}
+char* getClassString(enum priority_queue q) {
+  switch (q) {
+    case CLASS1: return "real-time";
+    case CLASS2_RR: return "normal";
+    case CLASS2_FCFS: return "normal";
+    default: return "unknown";
+  }
+}
+char* getAlgorithmString(struct proc *p) {
+  switch (p->queue) {
+    case CLASS1: return "EDF";
+    case CLASS2_RR: return "RR";
+    case CLASS2_FCFS: return "FCFS";
+    default: return "unknown";
+  }
 }
 
-// Prints a dashed separator line based on column widths
-void printdashline(int *columns, int count) {
-    cprintf("|");
-    for (int i = 0; i < count; i++) {
-        for (int j = 0; j < columns[i] + 2; j++) // +2 for spacing around text
-            cprintf("-");
-        cprintf("|");
-    }
+
+int count_digits(int number) {
+  if (number == 0)
+      return 1;  // Special case: 0 has 1 digit
+
+  int count = 0;
+  if (number < 0) {
+      count++;       // Count the negative sign
+      number = -number; // Work with the absolute value
+  }
+
+  while (number > 0) {
+      count++;
+      number /= 10; // Remove the last digit
+  }
+  return count;
+}
+
+void printspaces(int count) {  // Renamed to match calls
+  for (int i = 0; i < count; i++) {
+    cprintf(" ");
+  }
+}
+
+void printprocinfo(void) {
+  struct proc *p;
+
+  acquire(&ptable.lock);
+
+  cprintf("name            pid  state class   algorithm wait_time deadline cons_run arrival\n"
+    "------------------------------------------------------------------------------\n");
+
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if (p->state == UNUSED)
+      continue;
+
+    static int columns[] = { 16, 5, 10, 9, 10, 8, 8, 8, 8 };
+
+    cprintf("%s", p->name);
+    printspaces(columns[0] - strlen(p->name));
+
+    cprintf("%d", p->pid);
+    printspaces(columns[1] - count_digits(p->pid));
+
+    char *stateStr = getStateString(p->state);
+    cprintf("%s", stateStr);
+    printspaces(columns[2] - strlen(stateStr));
+
+    char *classStr = getClassString(p->queue);
+    cprintf("%s", classStr);
+    printspaces(columns[3] - strlen(classStr));
+
+    char *algoStr = getAlgorithmString(p);
+    cprintf("%s", algoStr);
+    printspaces(columns[4] - strlen(algoStr));
+
+    cprintf("%d", p->wait_time);
+    printspaces(columns[5] - count_digits(p->wait_time));
+
+    cprintf("%d", p->deadline);
+    printspaces(columns[6] - count_digits(p->deadline));
+
+    cprintf("%d", p->consecutive_run_ticks);
+    printspaces(columns[7] - count_digits(p->consecutive_run_ticks));
+
+    cprintf("%d", p->queue_arrival_time);
+    printspaces(columns[8] - count_digits(p->queue_arrival_time));
+
     cprintf("\n");
+  } 
+
+  release(&ptable.lock);
 }
-int sys_printprocinfo(void) {
-    static char *states[] = {
-        [UNUSED]   "UNUSED",
-        [EMBRYO]   "EMBRYO",
-        [SLEEPING] "SLEEPING",
-        [RUNNABLE] "RUNNABLE",
-        [RUNNING]  "RUNNING",
-        [ZOMBIE]   "ZOMBIE"
-    };
-
-    // Column widths
-    static int columns[] = {14, 5, 9, 10, 11, 9, 8, 16, 8}; // total: 9 columns
-
-    cprintf("| %-*s | %-*s | %-*s | %-*s | %-*s | %-*s | %-*s | %-*s | %-*s |\n",
-            columns[0], "name", columns[1], "pid", columns[2], "state",
-            columns[3], "class", columns[4], "algorithm", columns[5], "wait_time",
-            columns[6], "deadline", columns[7], "consecutive_run", columns[8], "arrtvs");
-
-    printdashline(columns, 9);
-
-    struct proc *p;
-    acquire(&ptable.lock);
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state == UNUSED)
-            continue;
-
-        const char *state = (p->state >= 0 && p->state < NELEM(states)) ? states[p->state] : "???";
-        const char *sched_class = p->sched_class ? p->sched_class : "normal";
-        const char *sched_algo = p->sched_algo ? p->sched_algo : "nlfd(RE)";
-
-        cprintf("| %-*s | %-*d | %-*s | %-*s | %-*s | %-*d | %-*d | %-*d | %-*d |\n",
-                columns[0], p->name,
-                columns[1], p->pid,
-                columns[2], state,
-                columns[3], sched_class,
-                columns[4], sched_algo,
-                columns[5], p->wait_time,
-                columns[6], p->deadline,
-                columns[7], p->consecutive_run_ticks,
-                columns[8], p->queue_arrival_time);
-    }
-    release(&ptable.lock);
-
-    return 0;
-}
-

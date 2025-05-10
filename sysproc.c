@@ -91,4 +91,9 @@ sys_uptime(void)
 }
 
 
+extern void printprocinfo(void);
 
+int sys_printprocinfo(void){
+  printprocinfo();
+  return 0;
+}

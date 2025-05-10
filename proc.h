@@ -54,8 +54,8 @@ struct proc {
   uint arrival_time;
   uint deadline;
   uint age;
-  char *sched_class[16];
-  char *sched_algo[16];
+  char sched_class[16];
+  char sched_algo[16];
   int wait_time;
   int consecutive_run_ticks;
   int queue_arrival_time;
