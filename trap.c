@@ -105,7 +105,7 @@ trap(struct trapframe *tf)
   if(myproc() && myproc()->state == RUNNING &&
   tf->trapno == T_IRQ0+IRQ_TIMER && myproc()->queue == CLASS2_RR){
     myproc()->cons_run++;
-    if(myproc()->cons_run >= 3){
+    if(myproc()->cons_run > 2){
       myproc()->cons_run = 0;
       yield();
     }

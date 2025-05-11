@@ -186,7 +186,7 @@ userinit(void)
   p->deadline = 0;
   p->queue = CLASS2_RR;
   p->age = 0;
-  //p->backToBack = 0;
+  p->cons_run = 0;
 
   inc_num(p);
 
@@ -260,12 +260,17 @@ fork(void)
   np->deadline = 0;
   np->age=0;
   np->queue = CLASS2_FCFS;
-  if (strncmp(np->name,"sh",3)||strncmp(np->parent->name,"sh",3)){
-    np->queue = CLASS2_RR;
+  // if (strncmp(np->name,"sh",3)||strncmp(np->parent->name,"sh",3)){
+  //   np->queue = CLASS2_RR;
+  // }
+  // else{
+  //   np->queue = CLASS2_FCFS;
+  // }
+  if(np->parent){
+    np->queue = np->parent->queue ;
   }
-  else{
-    np->queue = CLASS2_FCFS;
-  }
+
+  np->cons_run= 0 ;
 
   inc_num(np);
   release(&ptable.lock);
@@ -378,23 +383,44 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
   
+  int nextTick = ticks;
+  nextTick++;
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    // for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    //     if(p->state==RUNNABLE && p->queue==CLASS2_FCFS){
+    //       p->age++;    
+    //       //cprintf("age increased for PID: %d to %d\n",p->pid,p->age);
+    //       if(p->age>=800){
+    //         p->queue = CLASS2_RR ;
+    //         p->age = 0;
+    //         cprintf("PID %d: got increased priority to RR due to growing old!\n",p->pid);
+    //       }
+    //     }
+    //   }
+
+    /// پیاده سازی ایجینگ
+    if(nextTick==ticks){
+      nextTick++;
+      for(p=ptable.proc; p< &ptable.proc[NPROC];p++){
+        release(&ptable.lock);
+        acquire(&ptable.lock);
         if(p->state==RUNNABLE && p->queue==CLASS2_FCFS){
-          p->age++;    
-          //cprintf("age increased for PID: %d to %d\n",p->pid,p->age);
+          p->age++;
+          //cprintf("age increased for %s to %d\n",p->name,p->age);
           if(p->age>=800){
+            p->arrival_time = ticks;
             p->queue = CLASS2_RR ;
             p->age = 0;
             cprintf("PID %d: got increased priority to RR due to growing old!\n",p->pid);
           }
-        }
-      }
+        }  
+      }   
+    }     
       struct proc *runable_p = 0;
       int min_dead = 1000000;
 
@@ -586,7 +612,7 @@ kill(int pid)
       p->killed = 1;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING){
-        inc_num(p);
+        //inc_num(p);
         p->state = RUNNABLE;
       }  
       release(&ptable.lock);
