@@ -102,6 +102,7 @@ exec(char *path, char **argv)
   switchuvm(curproc);
   freevm(oldpgdir);
   if(strncmp(curproc->name,"sh",3) != 0  && strncmp(curproc->name ,"init",5) != 0 && curproc->queue != CLASS1){
+<<<<<<< HEAD
     if(curproc->state == RUNNABLE) {
       change_num(curproc, -1);
       curproc->queue = CLASS2_FCFS ;
@@ -110,6 +111,10 @@ exec(char *path, char **argv)
     else {
       curproc->queue = CLASS2_FCFS ;
     }
+=======
+    curproc->queue = CLASS2_FCFS ;
+    curproc->cons_run = 0;
+>>>>>>> 8ac89cb (time quantum handling)
   }
   return 0;
 

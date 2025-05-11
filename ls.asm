@@ -878,12 +878,19 @@ SYSCALL(printprocinfo)
  63b:	b8 17 00 00 00       	mov    $0x17,%eax
  640:	cd 40                	int    $0x40
  642:	c3                   	ret    
+<<<<<<< HEAD
 
 00000643 <dl_proc>:
 SYSCALL(dl_proc)
  643:	b8 18 00 00 00       	mov    $0x18,%eax
  648:	cd 40                	int    $0x40
  64a:	c3                   	ret    
+=======
+ 643:	66 90                	xchg   %ax,%ax
+ 645:	66 90                	xchg   %ax,%ax
+ 647:	66 90                	xchg   %ax,%ax
+ 649:	66 90                	xchg   %ax,%ax
+>>>>>>> 8ac89cb (time quantum handling)
  64b:	66 90                	xchg   %ax,%ax
  64d:	66 90                	xchg   %ax,%ax
  64f:	90                   	nop

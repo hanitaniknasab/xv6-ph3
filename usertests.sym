@@ -84,7 +84,10 @@
 00003913 open
 00003760 strchr
 000017e0 concreate
+<<<<<<< HEAD
 00003983 dl_proc
+=======
+>>>>>>> 8ac89cb (time quantum handling)
 000026b0 fourteen
 00003180 validateint
 00001020 fourfiles

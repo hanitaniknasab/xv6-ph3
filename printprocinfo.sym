@@ -42,7 +42,10 @@
 000000a0 strlen
 000002a3 open
 000000f0 strchr
+<<<<<<< HEAD
 00000313 dl_proc
+=======
+>>>>>>> 8ac89cb (time quantum handling)
 000002cb mkdir
 0000028b close
 00000570 free

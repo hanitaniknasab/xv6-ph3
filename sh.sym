@@ -62,7 +62,10 @@
 00000c60 strlen
 00000e63 open
 00000cb0 strchr
+<<<<<<< HEAD
 00000ed3 dl_proc
+=======
+>>>>>>> 8ac89cb (time quantum handling)
 00000e8b mkdir
 00000e4b close
 00000400 listcmd
