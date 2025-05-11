@@ -246,12 +246,17 @@ fork(void)
   np->deadline = 0;
   np->age=0;
   np->queue = CLASS2_FCFS;
-  if (strncmp(np->name,"sh",3)||strncmp(np->parent->name,"sh",3)){
-    np->queue = CLASS2_RR;
+  // if (strncmp(np->name,"sh",3)||strncmp(np->parent->name,"sh",3)){
+  //   np->queue = CLASS2_RR;
+  // }
+  // else{
+  //   np->queue = CLASS2_FCFS;
+  // }
+  if(np->parent){
+    np->queue = np->parent->queue ;
   }
-  else{
-    np->queue = CLASS2_FCFS;
-  }
+
+  np->cons_run= 0 ;
 
   inc_num(np);
   release(&ptable.lock);
