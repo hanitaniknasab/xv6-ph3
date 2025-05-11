@@ -172,7 +172,8 @@ userinit(void)
   p->deadline = 0;
   p->queue = CLASS2_RR;
   p->age = 0;
-  //p->backToBack = 0;
+
+  p->cons_run = 0;
 
   change_num(p, 1);
 
@@ -246,12 +247,17 @@ fork(void)
   np->deadline = 0;
   np->age=0;
   np->queue = CLASS2_FCFS;
-  if (strncmp(np->name,"sh",3)||strncmp(np->parent->name,"sh",3)){
-    np->queue = CLASS2_RR;
+  // if (strncmp(np->name,"sh",3)||strncmp(np->parent->name,"sh",3)){
+  //   np->queue = CLASS2_RR;
+  // }
+  // else{
+  //   np->queue = CLASS2_FCFS;
+  // }
+  if(np->parent){
+    np->queue = np->parent->queue ;
   }
-  else{
-    np->queue = CLASS2_FCFS;
-  }
+
+  np->cons_run= 0 ;
 
   change_num(np, 1);
   release(&ptable.lock);
@@ -364,23 +370,34 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
   
+  int nextTick = ticks;
+  nextTick++;
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if(p->state==RUNNABLE && p->queue==CLASS2_FCFS){
-          p->age++;    
-          //cprintf("age increased for PID: %d to %d\n",p->pid,p->age);
+ 
+    /// پیاده سازی ایجینگ
+    if(nextTick==ticks){
+      nextTick++;
+      for(p=ptable.proc; p< &ptable.proc[NPROC];p++){
+        release(&ptable.lock);
+        acquire(&ptable.lock);
+        if(p->state==RUNNABLE ){  //optional !: && p->queue==CLASS2_FCFS 
+          p->age++;
+      
           if(p->age>=800){
+            p->arrival_time = ticks;
             p->queue = CLASS2_RR ;
             p->age = 0;
             cprintf("PID %d: got increased priority to RR due to growing old!\n",p->pid);
           }
-        }
-      }
+        }  
+      }   
+    } 
+      
       struct proc *runable_p = 0;
       int min_dead = 1000000;
 
@@ -415,12 +432,12 @@ scheduler(void)
       }
       if(runable_p){
         c->proc = runable_p;
-        change_num(runable_p, -1);
-        //cprintf("proc %d worked in age %d\n",runable_p->pid,runable_p->age);
+        change_num(runable_p , -1);
+      
         if(runable_p->queue==CLASS2_FCFS){
           runable_p->age = 0;
         }
-        //cprintf("proc %d worked in age %d\n",runable_p->pid,runable_p->age);
+      
         switchuvm(runable_p);
         runable_p->state = RUNNING;
         swtch(&(c->scheduler),runable_p->context);
@@ -725,7 +742,7 @@ void printprocinfo(void) {
 
   acquire(&ptable.lock);
 
-  cprintf("name            pid  state class   algorithm wait_time deadline cons_run arrival\n"
+  cprintf("name            pid  state class   algorithm age deadline cons_run arrival\n"
     "------------------------------------------------------------------------------\n");
 
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
@@ -752,17 +769,17 @@ void printprocinfo(void) {
     cprintf("%s", algoStr);
     printspaces(columns[4] - strlen(algoStr));
 
-    cprintf("%d", p->wait_time);
-    printspaces(columns[5] - count_digits(p->wait_time));
+    cprintf("%d", p->age);
+    printspaces(columns[5] - count_digits(p->age));
 
     cprintf("%d", p->deadline);
     printspaces(columns[6] - count_digits(p->deadline));
 
-    cprintf("%d", p->consecutive_run_ticks);
-    printspaces(columns[7] - count_digits(p->consecutive_run_ticks));
+    cprintf("%d", p->cons_run);
+    printspaces(columns[7] - count_digits(p->cons_run));
 
-    cprintf("%d", p->queue_arrival_time);
-    printspaces(columns[8] - count_digits(p->queue_arrival_time));
+    cprintf("%d", p->arrival_time);
+    printspaces(columns[8] - count_digits(p->arrival_time));
 
     cprintf("\n");
   }

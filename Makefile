@@ -184,6 +184,7 @@ UPROGS=\
 	_printprocinfo\
 	_set_level_test\
 	_dlp\
+	_user_program\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

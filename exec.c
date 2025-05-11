@@ -110,6 +110,7 @@ exec(char *path, char **argv)
     else {
       curproc->queue = CLASS2_FCFS ;
     }
+    curproc->cons_run = 0;
   }
   return 0;
 
