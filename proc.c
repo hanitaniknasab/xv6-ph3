@@ -247,12 +247,6 @@ fork(void)
   np->deadline = 0;
   np->age=0;
   np->queue = CLASS2_FCFS;
-  // if (strncmp(np->name,"sh",3)||strncmp(np->parent->name,"sh",3)){
-  //   np->queue = CLASS2_RR;
-  // }
-  // else{
-  //   np->queue = CLASS2_FCFS;
-  // }
   if(np->parent){
     np->queue = np->parent->queue ;
   }
@@ -379,12 +373,10 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
  
-    /// پیاده سازی ایجینگ
+    /// piade sazi aging
     if(nextTick==ticks){
       nextTick++;
       for(p=ptable.proc; p< &ptable.proc[NPROC];p++){
-        release(&ptable.lock);
-        acquire(&ptable.lock);
         if(p->state==RUNNABLE ){  //optional !: && p->queue==CLASS2_FCFS 
           p->age++;
       
@@ -742,7 +734,7 @@ void printprocinfo(void) {
 
   acquire(&ptable.lock);
 
-  cprintf("name            pid  state class   algorithm age deadline cons_run arrival\n"
+  cprintf("name            pid  state class     algorithm   age   deadline cons_run arrival\n"
     "------------------------------------------------------------------------------\n");
 
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
@@ -790,10 +782,8 @@ void printprocinfo(void) {
 
 int sys_dl_proc(void){
   int pid, dead_line;
-  
-    if(argint(0, &pid) < 0)
-        return -1;
-    if(argint(1, &dead_line) < 0)
+  pid = myproc()->pid;
+    if(argint(0, &dead_line) < 0)
         return -1;
     int flag = 0;
     acquire(&ptable.lock);
@@ -813,12 +803,8 @@ int sys_dl_proc(void){
       }
     }
     release(&ptable.lock);
-    if(flag == 1){
-      printprocinfo();
-    }
-    else {
+    if(flag == 0){
       cprintf("proc not found!");
-
     }
     return 1;
 }

@@ -4,22 +4,30 @@
 
 int main(int argc, char *argv[]) {
    
-    if (argc != 5) {
-        printf(1, "Usage: 4 input\n");
+    if (argc != 4) {
+        printf(1, "Usage: 3 input\n");
         exit();
     }
     
-    int t_pid = atoi(argv[1]);
-    int t_deadline = atoi(argv[2]);
-    int pid_for_change_level = atoi(argv[3]);
-    int level = atoi(argv[4]);
-
-
-    if(dl_proc(t_pid , t_deadline) == -1){
+    int t_deadline = atoi(argv[1]);
+    int pid_for_change_level = atoi(argv[2]);
+    int level = atoi(argv[3]);
+    if(fork() == 0){
+        if(dl_proc(t_deadline) == -1){
+            printf(1,"dlp boom!");
+        }
+        if(fork() == 0){
+            if(dl_proc(t_deadline/2) == -1){
+                printf(1,"dlp boom!");
+            }
+            printprocinfo();
+            exit(); 
+        }
+        wait();
+        printprocinfo();
         exit();
     }
-
-    printprocinfo();   
+    wait();
     
     setlevel(pid_for_change_level, level);
 
